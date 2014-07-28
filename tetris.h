@@ -24,6 +24,10 @@
 #define LEVEL_SCORE		40		/* How many scope need go get in a level.	*/
 #define ONE_BURN_SCOPE		5		/* How many scope gives one burn.		*/
 
+/* General window size. */
+#define GEN_WINDOW_WIDE  	26
+#define GEN_WINDOW_HEIGHT 	25
+
 /* Color pairs. */
 #define COLOR_PAIRS	init_pair(1, COLOR_RED, 	COLOR_BLACK);	\
   			init_pair(2, COLOR_GREEN, 	COLOR_BLACK);	\
@@ -63,9 +67,10 @@ enum sides { LEFT, RIGHT, DOWN };
 
 #define RANDOM_GEN random() % NUMBER_OF_FIGURES
 
-/* Default window size. */
-uint16_t gen_window_wide = 26, gen_window_height = 25;
 uint16_t score;
+
+/* Type for local remains access (just convinient). */
+typedef char (*Remains_p)[GEN_WINDOW_WIDE];
 
 /* Mutexes. */
 pthread_mutex_t flow_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -86,7 +91,7 @@ typedef struct {		/* Local variables for functions. */
 typedef struct {
   uint16_t lines;
   uint16_t cols;
-} Remains;
+} Remains_xy;
 
 typedef struct {
   WINDOW *winp;
@@ -114,7 +119,7 @@ typedef struct {
   Tetris_figure *figure_p;	/* Pointer to figures.		*/
   uint8_t cur_figure;		/* Figure index. 		*/
   void *remains_p;		/* Pointer to remains.			*/
-  Remains *rem_sizes;		/* Pointer to size of remains array. 	*/
+  Remains_xy *rem_sizes;	/* Pointer to size of remains array. 	*/
   bool timer_exit;		/* Timer exit statis. 			*/
   bool tetris_exit;		/* Exit signal for tetris thread. 	*/
   uint8_t figure_color;		/* Figure color number.			*/

@@ -1,6 +1,6 @@
 #include"tetris.h"
 
-void fill_array(char (*remains)[gen_window_wide], Remains *rem_sizes, char ch)
+void fill_array(Remains_p remains, Remains_xy *rem_sizes, char ch)
 { /* Clean array. Copy character ch to all strings of the array. */
   uint16_t local_line = 0, local_col = rem_sizes-> cols;
 
@@ -12,7 +12,7 @@ void fill_array(char (*remains)[gen_window_wide], Remains *rem_sizes, char ch)
 
 int8_t next_figure_buff = -1;
 
-uint8_t figure_num_gen(void)
+uint8_t figure_num_gen(void)	/* FIXME: a bug with buffer. */
 {
   int8_t tmp = (next_figure_buff > 0) ? next_figure_buff : RANDOM_GEN;
 
@@ -33,7 +33,7 @@ uint8_t color_gen(void)
 
 void copy_to_remains(Tetris_data *data)
 { /* Copy current figure to remains array. */
-  char (*remains)[gen_window_wide] = data-> remains_p;
+  Remains_p remains = data-> remains_p;		/* Just Local remains access. */
   Local_data lv = {
       .f_index = 	data-> cur_figure,
       .f_area = 	data-> figure_p[lv.f_index].area,
@@ -59,13 +59,13 @@ void copy_to_remains(Tetris_data *data)
 
 bool check_side(Tetris_data *data, uint8_t side)
 { /* Check side around the figure (LEFT,RIGHT,DOWN). */
-  char (*remains)[gen_window_wide] = data-> remains_p;
+  Remains_p remains = data-> remains_p;		/* Just local remains access. */
   Local_data lv = {
-      .f_index = data-> cur_figure,
-      .f_area = data-> figure_p[lv.f_index].area,
-      .f_width = data-> figure_p[lv.f_index].width,
+      .f_index  = data-> cur_figure,
+      .f_area   = data-> figure_p[lv.f_index].area,
+      .f_width  = data-> figure_p[lv.f_index].width,
       .f_height = data-> figure_p[lv.f_index].height,
-      .f_dots = data-> figure_p[lv.f_index].dots,
+      .f_dots   = data-> figure_p[lv.f_index].dots,
       .cur_line = data-> cur_line,
   };
 
@@ -133,8 +133,7 @@ void show_burn(WINDOW *winp, const uint16_t line, const uint16_t cols)
 
 void fall_remains(Tetris_data *data, uint16_t line_index, const uint16_t cols)
 { /* When a line is burned, copy all the screen to one line down. */
-  char (*remains)[gen_window_wide] = data-> remains_p;
-
+  Remains_p remains = data-> remains_p;		/* Just local remains access. */
   for(; line_index > 0; line_index--) {
       memcpy(remains[line_index], remains[line_index-1], cols);
   }
@@ -143,8 +142,8 @@ void fall_remains(Tetris_data *data, uint16_t line_index, const uint16_t cols)
 void fill_screen(Tetris_data *data, const char *str, const char ch)
 { /* Fill screen to character ch and show string str */
   WINDOW *winp = data-> gen_win.winp;
-  const uint16_t cols = gen_window_wide -2;
-  register uint16_t line_index = gen_window_height -2;
+  const uint16_t cols = GEN_WINDOW_WIDE -2;
+  register uint16_t line_index = GEN_WINDOW_HEIGHT -2;
   register uint16_t col_index = 1;
   uint8_t color = color_gen();
 
@@ -169,8 +168,8 @@ void fill_screen(Tetris_data *data, const char *str, const char ch)
 
 void level_up(Tetris_data *data)
 { /* Call functions needed for next level. And increase the speed. */
-  Remains *rem_sizes = data-> rem_sizes;
-  char (*remains)[gen_window_wide] = data-> remains_p;
+  Remains_xy *rem_sizes = data-> rem_sizes;
+  Remains_p remains = data-> remains_p;		/* Just local remains access. */
 
   fill_array(remains, rem_sizes, SYMBOL_TO_FILL);
   fill_screen(data, "Level up!!!", BURN_SYMBOL);
@@ -183,7 +182,7 @@ void level_up(Tetris_data *data)
 
 void check_full_lines(Tetris_data *data)
 { /* Check full lines on to the screen and burn it. Also do checks for next level. */
-  char (*remains)[gen_window_wide] = data-> remains_p;
+  Remains_p remains = data-> remains_p;		/* Remains access. */
   const uint16_t cols = data-> rem_sizes-> cols -1;
   register uint16_t line_index = data-> rem_sizes-> lines -1;
 
@@ -303,8 +302,8 @@ void *tetris_flow(void *tmp_ptr)
   Tetris_data *data = tmp_ptr;
 
   #if DEBUG					/* For Clean array. */
-  Remains *rem_sizes = data-> rem_sizes;
-  char (*remains)[gen_window_wide] = data-> remains_p;
+  Remains_xy *rem_sizes = data-> rem_sizes;
+  Remains_p remains = data-> remains_p;		/* Local remains access. */
   #endif
   bool tmp = FALSE, prev = FALSE;
   int16_t ch;
@@ -411,9 +410,9 @@ void show_remains(Tetris_data *data)
 { /* Show remains array. */
   WINDOW *win_p = data-> gen_win.winp;
   register uint16_t line;
-  char (*remains)[gen_window_wide] = data-> remains_p;
+  Remains_p remains = data-> remains_p;	/* Local remains access. */
 
-  for(line = 1; line < gen_window_height -1; line++) {
+  for(line = 1; line < GEN_WINDOW_HEIGHT -1; line++) {
       mvwprintw(win_p, line, 1, "%s", remains[line]); 
   }
 }
@@ -475,9 +474,9 @@ void write_info(Tetris_data *data)
   mvwprintw(win_p, 7, 1, "Next:");
   show_figure(win_p, &data-> figure_p[next_figure_buff], 9, 4, data-> figure_color);
 
-  mvwprintw(win_p, gen_window_height -4, 2, "<a s d>");
-  mvwprintw(win_p, gen_window_height -3, 2, "   V   ");
-  mvwprintw(win_p, gen_window_height -2, 2, "[space]");
+  mvwprintw(win_p, GEN_WINDOW_HEIGHT -4, 2, "<a s d>");
+  mvwprintw(win_p, GEN_WINDOW_HEIGHT -3, 2, "   V   ");
+  mvwprintw(win_p, GEN_WINDOW_HEIGHT -2, 2, "[space]");
   wrefresh(win_p);
 
   wattroff(win_p, A_BOLD);
@@ -505,7 +504,7 @@ int main(void)
   COLOR_PAIRS;
 
   /* The array of remains. */
-  Remains rem_sizes = { gen_window_height -1, gen_window_wide - 1 };
+  Remains_xy rem_sizes = { GEN_WINDOW_HEIGHT -1, GEN_WINDOW_WIDE - 1 };
   char remains[rem_sizes.lines][rem_sizes.cols];
 
   /* Clean and fill the array. */
@@ -516,11 +515,11 @@ int main(void)
 
   /* Data. */
   Tetris_data window_data = { 
-      { NULL, gen_window_height, gen_window_wide }, 		/* General window. 	*/
-      { NULL, gen_window_height, INFO_WINDOW_WIDTH },		/* Info window. 	*/
+      { NULL, GEN_WINDOW_HEIGHT, GEN_WINDOW_WIDE }, 		/* General window. 	*/
+      { NULL, GEN_WINDOW_HEIGHT, INFO_WINDOW_WIDTH },		/* Info window. 	*/
       .timeout = MIN_SPEED,					/* Timeout.			*/
       .cur_line = 1,						/* Line inside the cicle. 	*/
-      .column = gen_window_wide/2,				/* Initial figure position. 	*/
+      .column = GEN_WINDOW_WIDE/2,				/* Initial figure position. 	*/
       .cur_speed = 0,						/* Initial speed (gear). */
       .figure_p = figures,
       .speed = { SPEED_VALUES },
@@ -532,10 +531,10 @@ int main(void)
 
   /* Create windows. */
   window_data.gen_win.winp = create_win(window_data.gen_win.ht, window_data.gen_win.wt, 0, 0);
-  window_data.info_win.winp = create_win(window_data.info_win.ht, window_data.info_win.wt, 0, gen_window_wide);
+  window_data.info_win.winp = create_win(window_data.info_win.ht, window_data.info_win.wt, 0, GEN_WINDOW_WIDE);
 
   /* Generate the first figure. */
-  window_data.cur_figure = figure_num_gen();
+  window_data.cur_figure = figure_num_gen();	/* Figure should be generated before write_info() */
 
   /* Generate color for first figure. */
   window_data.figure_color = color_gen();
