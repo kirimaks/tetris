@@ -9,7 +9,7 @@
 TG = tetris
 ERR_LOG = error.log
 
-OPTFLAGS = -DCENTER_POSITION -g -DDEBUG #-DONE_STEP
+#OPTFLAGS = -DCENTER_POSITION -g -DDEBUG #-DONE_STEP
 CFLAGS = -Wall -Wextra $(OPTFLAGS)
 
 LIBS = -lncurses -pthread
@@ -39,6 +39,7 @@ clean:
 	    rm $(ERR_LOG); 	\
 	fi; 
 
+debug: OPTFLAGS += -DCENTER_POSITION -g -DDEBUG #-DONE_STEP
 debug: clean all
 	touch $(ERR_LOG)
 	valgrind --leak-check=full --show-reachable=yes --track-origins=yes ./$(TG) 2> $(ERR_LOG)

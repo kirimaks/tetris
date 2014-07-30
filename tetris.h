@@ -23,6 +23,7 @@
 #define BURN_SYMBOL		'*'
 #define LEVEL_SCORE		40		/* How many scope need go get in a level.	*/
 #define ONE_BURN_SCOPE		5		/* How many scope gives one burn.		*/
+#define NUMBER_OF_COLORS	7
 
 /* General window size. */
 #define GEN_WINDOW_WIDE  	26
@@ -65,7 +66,9 @@
 
 enum sides { LEFT, RIGHT, DOWN };
 
-#define RANDOM_GEN random() % NUMBER_OF_FIGURES
+#define FIGURE_NUM_RANGE random() % NUMBER_OF_FIGURES
+#define COLOR_NUM_RANGE	 random() % (NUMBER_OF_COLORS -1) +1
+#define color_gen() COLOR_NUM_RANGE
 
 uint16_t score;
 

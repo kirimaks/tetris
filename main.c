@@ -12,22 +12,12 @@ void fill_array(Remains_p remains, Remains_xy *rem_sizes, char ch)
 
 int8_t next_figure_buff = -1;
 
-uint8_t figure_num_gen(void)	/* FIXME: a bug with buffer. */
-{
-  int8_t tmp = (next_figure_buff > 0) ? next_figure_buff : RANDOM_GEN;
+uint8_t figure_num_gen(void)
+{ /* Generate number between 0 and NUMBER_OF_FIGURES. */
+  int8_t tmp = (next_figure_buff >= 0) ? next_figure_buff : FIGURE_NUM_RANGE;
 
-  while((next_figure_buff = RANDOM_GEN) == tmp);
+  while((next_figure_buff = FIGURE_NUM_RANGE) == tmp);
 
-  return tmp;
-}
-
-uint8_t color_gen(void)
-{ /* Generate color index (number). Returns number between 1 and 7. */
-  uint8_t tmp = random() % 8;	/* TODO: define number of colors. */
-
-  while(!tmp) {	/* If it was zero, generate again. */
-      tmp = random() % 8;
-  }
   return tmp;
 }
 
@@ -272,7 +262,7 @@ void *timer_flow(void *tmp_ptr)
   }
 }
 
-uint16_t line_buff;
+uint16_t line_buff;	/* TODO: describe the variable. */
 
 void rotate(Tetris_data *data)	/* FIXME: has a bug (if hold space). */
 { /* Rotate the figure. */
@@ -417,6 +407,7 @@ void show_remains(Tetris_data *data)
   }
 }
 
+/* TODO: maybe need to write figures from bottom to top. */
 void show_figure(WINDOW *win_p, Tetris_figure *fig_p, const uint8_t line, const uint8_t col, const uint8_t figure_color)
 {
   register uint8_t f_area, f_line, f_dot;
@@ -441,13 +432,10 @@ void write_screen(Tetris_data *data)
   }
 
   WINDOW *win_p = data-> gen_win.winp;
-
   werase(win_p);
   box(win_p, 0, 0);	/* Show the box. */
-
   show_remains(data);
   show_figure(win_p, &data-> figure_p[data-> cur_figure], data-> cur_line, data-> column, data-> figure_color);
-  
   wrefresh(win_p);
 
   pthread_mutex_unlock(&flow_mutex);
@@ -471,7 +459,12 @@ void write_info(Tetris_data *data)
   mvwprintw(win_p, 3, 1, "Speed:%u", data-> cur_speed);
   mvwprintw(win_p, 5, 1, "H:%u/W:%u", data-> gen_win.ht, data-> gen_win.wt);
 
+  #if DEBUG
+  mvwprintw(win_p, 7, 1, "Next:(%d)", next_figure_buff);
+  #else
   mvwprintw(win_p, 7, 1, "Next:");
+  #endif
+
   show_figure(win_p, &data-> figure_p[next_figure_buff], 9, 4, data-> figure_color);
 
   mvwprintw(win_p, GEN_WINDOW_HEIGHT -4, 2, "<a s d>");
