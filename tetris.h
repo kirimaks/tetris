@@ -24,6 +24,7 @@
 #define LEVEL_SCORE		40		/* How many scope need go get in a level.	*/
 #define ONE_BURN_SCOPE		5		/* How many scope gives one burn.		*/
 #define NUMBER_OF_COLORS	7
+#define START_ALIGN		10		/* The speed, figures start to fall the same place where it was before. */
 
 /* General window size. */
 #define GEN_WINDOW_WIDE  	26

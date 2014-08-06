@@ -19,7 +19,6 @@ uint8_t figure_num_gen(void)
   while((next_figure_buff = FIGURE_NUM_RANGE) == tmp);
 
   return tmp;
-  return 2;
 }
 
 void copy_to_remains(Tetris_data *data)
@@ -202,7 +201,7 @@ void check_full_lines(Tetris_data *data)
 
 void next_step(Tetris_data *data)
 { /* Generate next step of iteration (new figure from the top). */
-  if(data-> cur_line - data-> figure_p[data-> cur_figure].height <= 1) {
+  if(data-> cur_line - data-> figure_p[data-> cur_figure].height <= 1) {	/* Check for game over. */
       data-> tetris_exit = TRUE;
       data-> timer_exit = TRUE;
       fill_screen(data, "GAME_OVER", SYMBOL);
@@ -231,7 +230,7 @@ void next_step(Tetris_data *data)
       data-> column -= data-> figure_p[data-> cur_figure].width;
   }
 
-  if(data-> cur_speed < 12) {		/* Align next figure position if speed is low.	*/
+  if(data-> cur_speed < START_ALIGN) {		/* Align next figure position if speed is low.	*/
       data-> column = data-> gen_win.wt / 2;
   }
 
@@ -258,7 +257,7 @@ void *timer_flow(void *tmp_ptr)
   }
 }
 
-void rotate(Tetris_data *data)	/* FIXME: has a bug (if hold space). */
+void rotate(Tetris_data *data)
 { /* Rotate the figure. */
   const uint8_t f_index = data-> cur_figure;
   const uint8_t local_figure_num = data-> figure_p[f_index].local_figure_number;
@@ -287,7 +286,7 @@ void *tetris_flow(void *tmp_ptr)
           return NULL;				/* Close thread. */
       }
 
-      pthread_mutex_lock(&tetris_mutex);	/* Will be just wait here. */
+      pthread_mutex_lock(&tetris_mutex);	/* Will be just wait here, if taken somewhere else. */
       pthread_mutex_unlock(&tetris_mutex);
       flushinp();
 
@@ -505,10 +504,7 @@ int main(void)
       { NULL, GEN_WINDOW_HEIGHT, GEN_WINDOW_WIDE }, 		/* General window. 	*/
       { NULL, GEN_WINDOW_HEIGHT, INFO_WINDOW_WIDTH },		/* Info window. 	*/
       .timeout = MIN_SPEED,					/* Timeout.			*/
-      //.cur_line = 1,						/* Line inside the cicle. 	*/
-      /* TEST */
-      .cur_line = 4,						/* Line inside the cicle. 	*/
-      /* TEST */
+      .cur_line = 4,	/* Start line. */			/* Line inside the cicle. 	*/
       .column = GEN_WINDOW_WIDE/2,				/* Initial figure position. 	*/
       .cur_speed = 0,						/* Initial speed (gear). */
       .figure_p = figures,
@@ -523,16 +519,11 @@ int main(void)
   window_data.gen_win.winp = create_win(window_data.gen_win.ht, window_data.gen_win.wt, 0, 0);
   window_data.info_win.winp = create_win(window_data.info_win.ht, window_data.info_win.wt, 0, GEN_WINDOW_WIDE);
 
-  /* Generate the first figure. */
   window_data.cur_figure = figure_num_gen();	/* Figure should be generated before write_info() */
+  window_data.figure_color = color_gen();	/* Generate color for first figure. */
 
-  /* Generate color for first figure. */
-  window_data.figure_color = color_gen();
+  write_info(&window_data);			/* Write info first time. */
 
-  /* Write info first time. */
-  write_info(&window_data);
-
-  /* Threads. */
   pthread_t tetris_thread;
   pthread_t timer_thread;
 
@@ -544,7 +535,7 @@ int main(void)
       return 1;
   }
 
-  pthread_join(tetris_thread, NULL);
+  pthread_join(tetris_thread, NULL);	/* Waiting for all threads.	*/
   pthread_join(timer_thread, NULL);
 
   tetris_exit(&window_data);
