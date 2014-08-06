@@ -81,7 +81,6 @@ pthread_mutex_t tetris_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* TYPES. */
 typedef struct {		/* Local variables for functions. */
-  const uint8_t f_index;
   const uint8_t f_area;
   const uint8_t f_width;
   const uint8_t f_height;

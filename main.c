@@ -19,43 +19,46 @@ uint8_t figure_num_gen(void)
   while((next_figure_buff = FIGURE_NUM_RANGE) == tmp);
 
   return tmp;
+  return 2;
 }
 
 void copy_to_remains(Tetris_data *data)
 { /* Copy current figure to remains array. */
   Remains_p remains = data-> remains_p;		/* Just Local remains access. */
   Local_data lv = {
-      .f_index = 	data-> cur_figure,
-      .f_area = 	data-> figure_p[lv.f_index].area,
-      .f_width = 	data-> figure_p[lv.f_index].width,
+      .f_area = 	data-> figure_p[data-> cur_figure].area,
+      .f_width = 	data-> figure_p[data-> cur_figure].width,
+      .f_height = 	data-> figure_p[data-> cur_figure].height,
       .cur_line = 	data-> cur_line -1,
       .cur_col = 	data-> column -1,
-      .f_dots = 	data-> figure_p[lv.f_index].dots,
+      .f_dots = 	data-> figure_p[data-> cur_figure].dots,
       .ch = SYMBOL,
   };
   register uint8_t area_index = 0, line_index = 0, col_index = 0;
 
+  line_index = lv.f_height -1;
+  
   for(; area_index < lv.f_area; area_index++) {
       if(lv.f_dots[area_index]) {
-          memcpy(&remains[lv.cur_line + line_index][lv.cur_col + col_index], &lv.ch, 1);
+          memcpy(&remains[lv.cur_line - line_index][lv.cur_col + col_index], &lv.ch, 1);
       }
+
       col_index++;
       if(col_index == lv.f_width) {
-          line_index++;
+          line_index--;
 	  col_index = 0;
       }
   }
 }
 
-bool check_side(Tetris_data *data, uint8_t side)
+bool check_side(Tetris_data *data, uint8_t side, uint8_t length)
 { /* Check side around the figure (LEFT,RIGHT,DOWN). */
   Remains_p remains = data-> remains_p;		/* Just local remains access. */
   Local_data lv = {
-      .f_index  = data-> cur_figure,
-      .f_area   = data-> figure_p[lv.f_index].area,
-      .f_width  = data-> figure_p[lv.f_index].width,
-      .f_height = data-> figure_p[lv.f_index].height,
-      .f_dots   = data-> figure_p[lv.f_index].dots,
+      .f_area   = data-> figure_p[data-> cur_figure].area,
+      .f_width  = data-> figure_p[data-> cur_figure].width,
+      .f_height = data-> figure_p[data-> cur_figure].height,
+      .f_dots   = data-> figure_p[data-> cur_figure].dots,
       .cur_line = data-> cur_line,
   };
 
@@ -66,27 +69,27 @@ bool check_side(Tetris_data *data, uint8_t side)
           return TRUE;
       } 
   } else if(RIGHT == side) {
-      lv.cur_col = data-> column;
+      lv.cur_col = data-> column + length;	/* Widht of the next figure. */
       if((lv.cur_col + lv.f_width) >= data-> gen_win.wt -1) {
           return TRUE;
       }
   } else if(DOWN == side) {
       lv.cur_col = data-> column -1;
-      if(lv.cur_line + lv.f_height >= data-> gen_win.ht) {
+      if(lv.cur_line >= data-> gen_win.ht -1) {	/* Check the bottom of the window. */
           return TRUE;
-      }
+      }	
   }
 
-  register uint8_t area_index = 0, line_index = 0, col_index = 0;
-  
+  register uint8_t area_index = 0, line_index = lv.f_height, col_index = 0;
+
   for(; area_index < lv.f_area; area_index++) {
-      if(lv.f_dots[area_index] && remains[lv.cur_line + line_index][lv.cur_col + col_index] == SYMBOL) {
+      if(lv.f_dots[area_index] && remains[lv.cur_line - line_index +1][lv.cur_col + col_index] == SYMBOL) {
           return TRUE;
       }
       col_index++;
       if(col_index == lv.f_width) {
           col_index = 0;
-	  line_index++;
+	  line_index--;
       }
   }
 
@@ -199,7 +202,7 @@ void check_full_lines(Tetris_data *data)
 
 void next_step(Tetris_data *data)
 { /* Generate next step of iteration (new figure from the top). */
-  if(data-> cur_line <= 2) {	/* Check for GAME OVER. */
+  if(data-> cur_line - data-> figure_p[data-> cur_figure].height <= 1) {
       data-> tetris_exit = TRUE;
       data-> timer_exit = TRUE;
       fill_screen(data, "GAME_OVER", SYMBOL);
@@ -217,9 +220,9 @@ void next_step(Tetris_data *data)
   check_full_lines(data);		/* Maybe level_up().		*/
   pthread_mutex_unlock(&tetris_mutex);
 
-  data-> cur_line = 1;			/* Start from new line.				*/
-  data-> cur_figure = figure_num_gen();	/* Generate new figure number. 			*/
-  data-> figure_color = color_gen();	/* Generate color number for new figure.	*/
+  data-> cur_figure = figure_num_gen();				/* Generate new figure number. 			*/
+  data-> cur_line = data-> figure_p[data-> cur_figure].height;	/* Start from new line.				*/
+  data-> figure_color = color_gen();				/* Generate color number for new figure.	*/
 
   write_info(data);
 
@@ -228,15 +231,9 @@ void next_step(Tetris_data *data)
       data-> column -= data-> figure_p[data-> cur_figure].width;
   }
 
-  #ifdef CENTER_POSITION
   if(data-> cur_speed < 12) {		/* Align next figure position if speed is low.	*/
       data-> column = data-> gen_win.wt / 2;
   }
-  #endif
-  #ifdef ONE_STEP	/* Debug. Just do only one iteration and exit. */
-  data-> timer_exit = TRUE;
-  data-> tetris_exit = TRUE;
-  #endif
 
   pthread_mutex_unlock(&flow_mutex);
   exit:
@@ -253,16 +250,13 @@ void *timer_flow(void *tmp_ptr)
       } 
 
       write_screen(data);			/* Update screen.	*/
+      usleep(data-> timeout);
       increase_line(data);
-
-      if(check_side(data,DOWN)) {
+      if(check_side(data,DOWN,0)) {
           next_step(data);
       }
-      usleep(data-> timeout);
   }
 }
-
-uint16_t line_buff;	/* TODO: describe the variable. */
 
 void rotate(Tetris_data *data)	/* FIXME: has a bug (if hold space). */
 { /* Rotate the figure. */
@@ -270,20 +264,10 @@ void rotate(Tetris_data *data)	/* FIXME: has a bug (if hold space). */
   const uint8_t local_figure_num = data-> figure_p[f_index].local_figure_number;
   const uint8_t local_figure_max = data-> figure_p[f_index].max_local_figure_number;
 
-  const uint8_t last_height = data-> figure_p[data-> cur_figure].height;
-
   if(local_figure_num < local_figure_max) {
       ++data-> cur_figure;
   } else {
       data-> cur_figure -= local_figure_max;
-  }
-
-  /* Make choise about the line from witch new figure will be shown. */
-  if(data-> cur_line > 3 && line_buff != data-> cur_line) {
-      if(data-> figure_p[data-> cur_figure].height > last_height) {
-          data-> cur_line -= data-> figure_p[data-> cur_figure].height - last_height;
-      }
-      line_buff = data-> cur_line;
   }
 }
 
@@ -314,7 +298,7 @@ void *tetris_flow(void *tmp_ptr)
           
 	  case KEY_LEFT:
 	  case 'a':
-	      if(!(tmp = check_side(data,LEFT))) {
+	      if(!(tmp = check_side(data,LEFT,0))) {
 	          data-> column--;
 		  if(prev) {
 		      usleep(data-> timeout/2);
@@ -326,7 +310,7 @@ void *tetris_flow(void *tmp_ptr)
 
 	  case KEY_RIGHT:
 	  case 'd':
-	      if(!(tmp = check_side(data,RIGHT))) { 
+	      if(!(tmp = check_side(data,RIGHT,0))) { 
 	          data-> column++;
 		  if(prev) {
 		      usleep(data-> timeout/2);
@@ -340,22 +324,29 @@ void *tetris_flow(void *tmp_ptr)
 	  case 's':
               write_screen(data);
               increase_line(data);
-              if(check_side(data,DOWN)) {
+              if(check_side(data,DOWN,0)) {
 	          next_step(data);
 	      } else {
                   write_screen(data);
 	      }
 	      break;
 
-	  case KEY_SPACE:	/* Make choise about rotate figure or not. */
-	      if(!check_side(data,LEFT) && !check_side(data,RIGHT) && !check_side(data,DOWN)) {
-	          rotate(data);
-              } else if(data-> column == 1) {
-	          rotate(data);
-	      } else if(data-> column + data-> figure_p[data-> cur_figure].width >= data-> gen_win.wt -1) {
-	          rotate(data);
+	  case KEY_SPACE:		/* Make choise about rotate figure or not. */
+              if(data-> column == 1) {	
+	          rotate(data);		/* Left edge. 	*/
+              } else if(data-> column + data-> figure_p[data-> cur_figure].width >= data-> gen_win.wt -1) {
+	          rotate(data);		/* Right edge. 	*/
 		  data-> column = data-> gen_win.wt - data-> figure_p[data-> cur_figure].width -1;
 	      }
+
+              if(data-> cur_figure == 2) { /* If the stick. */
+	          if(!check_side(data,LEFT,2) && !check_side(data,RIGHT,2) && !check_side(data,DOWN,0)) {
+	              rotate(data);
+		  }
+	      } else if(!check_side(data,LEFT,0) && !check_side(data,RIGHT,0) && !check_side(data,DOWN,0)) {
+	          rotate(data);
+	      }
+
               write_screen(data);	/* Do it anyway. */
 	      usleep(data-> timeout/4);
 	      break;
@@ -407,21 +398,23 @@ void show_remains(Tetris_data *data)
   }
 }
 
-/* TODO: maybe need to write figures from bottom to top. */
 void show_figure(WINDOW *win_p, Tetris_figure *fig_p, const uint8_t line, const uint8_t col, const uint8_t figure_color)
 {
-  register uint8_t f_area, f_line, f_dot;
+  register uint8_t f_area = fig_p-> area, f_line = 0, f_col = fig_p-> width;
   wattron(win_p, A_BOLD | COLOR_PAIR(figure_color));	/* Enable color. */
 
-  for(f_dot = f_line = f_area = 0; f_area < fig_p-> area; f_area++, f_dot++) {
-      if(f_dot == fig_p-> width) {
-          f_dot = 0;
+  while(TRUE) {
+      if(fig_p-> dots[f_area]) {	/* If there is a dot. */
+          mvwaddch(win_p, line - f_line, col + f_col, SYMBOL);
+      }
+      if(f_col == 0) {
+          f_col = fig_p-> width;
 	  f_line++;
       }
-      if(fig_p-> dots[f_area]) {
-          mvwaddch(win_p, line + f_line, col + f_dot, SYMBOL);
-      }
+      f_col--;
+      if(f_area-- == 0) break;
   }
+
   wattroff(win_p, A_BOLD | COLOR_PAIR(figure_color));	/* Disable color. */
 }
 
@@ -465,7 +458,8 @@ void write_info(Tetris_data *data)
   mvwprintw(win_p, 7, 1, "Next:");
   #endif
 
-  show_figure(win_p, &data-> figure_p[next_figure_buff], 9, 4, data-> figure_color);
+  //show_figure(win_p, &data-> figure_p[next_figure_buff], 9, 4, data-> figure_color);
+  show_figure(win_p, &data-> figure_p[next_figure_buff], 12, 4, data-> figure_color);
 
   mvwprintw(win_p, GEN_WINDOW_HEIGHT -4, 2, "<a s d>");
   mvwprintw(win_p, GEN_WINDOW_HEIGHT -3, 2, "   V   ");
@@ -511,7 +505,10 @@ int main(void)
       { NULL, GEN_WINDOW_HEIGHT, GEN_WINDOW_WIDE }, 		/* General window. 	*/
       { NULL, GEN_WINDOW_HEIGHT, INFO_WINDOW_WIDTH },		/* Info window. 	*/
       .timeout = MIN_SPEED,					/* Timeout.			*/
-      .cur_line = 1,						/* Line inside the cicle. 	*/
+      //.cur_line = 1,						/* Line inside the cicle. 	*/
+      /* TEST */
+      .cur_line = 4,						/* Line inside the cicle. 	*/
+      /* TEST */
       .column = GEN_WINDOW_WIDE/2,				/* Initial figure position. 	*/
       .cur_speed = 0,						/* Initial speed (gear). */
       .figure_p = figures,
