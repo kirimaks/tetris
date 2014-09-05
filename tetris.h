@@ -117,14 +117,13 @@ typedef struct {
   size_t timeout;		/* (Speed).			*/
   uint16_t cur_line;		/* Current line inside loop.	*/
   uint16_t column;		/* Current colum inside loop.	*/
-  size_t speed[GEARS];		/* Array with speed values. 	*/
+  size_t *speed;
   uint8_t cur_speed;		/* Speed index. 		*/
   Tetris_figure *figure_p;	/* Pointer to figures.		*/
   uint8_t cur_figure;		/* Figure index. 		*/
   void *remains_p;		/* Pointer to remains.			*/
   Remains_xy *rem_sizes;	/* Pointer to size of remains array. 	*/
-  bool timer_exit;		/* Timer exit statis. 			*/
-  bool tetris_exit;		/* Exit signal for tetris thread. 	*/
+  bool tetris_exit;
   uint8_t figure_color;		/* Figure color number.			*/
 } Tetris_data;
 

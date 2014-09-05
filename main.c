@@ -61,22 +61,15 @@ bool check_side(Tetris_data *data, uint8_t side, uint8_t length)
       .cur_line = data-> cur_line,
   };
 
-  /* Set cur_col and check edges of the screen. */
-  if(LEFT == side) {
+  if(LEFT == side) { 	/* Set cur_col and check edges of the screen. */
       lv.cur_col = data-> column -2;
-      if(1 == data-> column) {
-          return TRUE;
-      } 
+      if(1 == data-> column) { return TRUE; } 
   } else if(RIGHT == side) {
-      lv.cur_col = data-> column + length;	/* Widht of the next figure. */
-      if((lv.cur_col + lv.f_width) >= data-> gen_win.wt -1) {
-          return TRUE;
-      }
+      lv.cur_col = data-> column + length;			/* Widht of the next figure. */
+      if((lv.cur_col + lv.f_width) >= data-> gen_win.wt -1) { return TRUE; }
   } else if(DOWN == side) {
       lv.cur_col = data-> column -1;
-      if(lv.cur_line >= data-> gen_win.ht -1) {	/* Check the bottom of the window. */
-          return TRUE;
-      }	
+      if(lv.cur_line >= data-> gen_win.ht -1) {	return TRUE; }	/* Check the bottom of the window. */
   }
 
   register uint8_t area_index = 0, line_index = lv.f_height, col_index = 0;
@@ -97,9 +90,7 @@ bool check_side(Tetris_data *data, uint8_t side, uint8_t length)
 
 void increase_line(Tetris_data *data)
 { /* Increase the figure position. */
-  if(pthread_mutex_trylock(&flow_mutex)) { 
-      goto exit; 	/* Try to take the mutex, and if it's taken already, do nothing. */
-  }
+  if(pthread_mutex_trylock(&flow_mutex)) { goto exit; }	/* Try to take the mutex, and if it's taken already, do nothing. */
   data-> cur_line++;
   pthread_mutex_unlock(&flow_mutex);
   exit:
@@ -203,14 +194,11 @@ void next_step(Tetris_data *data)
 { /* Generate next step of iteration (new figure from the top). */
   if(data-> cur_line - data-> figure_p[data-> cur_figure].height <= 1) {	/* Check for game over. */
       data-> tetris_exit = TRUE;
-      data-> timer_exit = TRUE;
       fill_screen(data, "GAME_OVER", SYMBOL);
       return;
   }
 
-  if(pthread_mutex_trylock(&flow_mutex)) {
-      goto exit;
-  }
+  if(pthread_mutex_trylock(&flow_mutex)) { goto exit; }
 
   copy_to_remains(data);		/* Copy current figure to remains array. 	*/
 
@@ -239,24 +227,6 @@ void next_step(Tetris_data *data)
   return;
 }
 
-void *timer_flow(void *tmp_ptr)
-{ /* Thread with the timer. */
-  Tetris_data *data = (Tetris_data*)tmp_ptr;
-
-  for(;;) {
-      if(data-> timer_exit) { 
-          return NULL;				/* Close the thread. 	*/
-      } 
-
-      write_screen(data);			/* Update screen.	*/
-      usleep(data-> timeout);
-      increase_line(data);
-      if(check_side(data,DOWN,0)) {
-          next_step(data);
-      }
-  }
-}
-
 void rotate(Tetris_data *data)
 { /* Rotate the figure. */
   const uint8_t f_index = data-> cur_figure;
@@ -270,7 +240,7 @@ void rotate(Tetris_data *data)
   }
 }
 
-void *tetris_flow(void *tmp_ptr)
+void *key_handle_flow(void *tmp_ptr)
 { /* Thread with button handler. */
   Tetris_data *data = tmp_ptr;
 
@@ -282,9 +252,7 @@ void *tetris_flow(void *tmp_ptr)
   int16_t ch;
 
   for(;;) {
-      if(data-> tetris_exit) {
-          return NULL;				/* Close thread. */
-      }
+      if(data-> tetris_exit) { return NULL; }	/* Close thread. */
 
       pthread_mutex_lock(&tetris_mutex);	/* Will be just wait here, if taken somewhere else. */
       pthread_mutex_unlock(&tetris_mutex);
@@ -292,8 +260,8 @@ void *tetris_flow(void *tmp_ptr)
 
       switch(ch = getch()) {
           case 'q':
-	      data-> timer_exit = TRUE;		/* Tell to the timer to close. 	*/
-	      return NULL;			/* Close the thread. 		*/
+	      data-> tetris_exit = TRUE;		/* Tell to the timer to close. 	*/
+	      return NULL;				/* Close the thread. 		*/
           
 	  case KEY_LEFT:
 	  case 'a':
@@ -474,7 +442,8 @@ void tetris_exit(void *tmp_ptr)
   delwin(data->gen_win.winp);
   delwin(data->info_win.winp);
   endwin();
-  _nc_free_and_exit(EXIT_SUCCESS);
+  free(data);
+  _nc_free_and_exit(EXIT_SUCCESS);	/* EXIT... */
 }
 
 int main(void)
@@ -484,61 +453,57 @@ int main(void)
   cbreak();
   noecho(); 
   keypad(stdscr, TRUE);
-  curs_set(0);			/* Invisibly cursor. */
+  curs_set(0);		/* Invisibly cursor. */
 
-  /* Colors definition. */
-  COLOR_PAIRS;
+  COLOR_PAIRS;		/* Colors definition. */
 
-  /* The array of remains. */
-  Remains_xy rem_sizes = { GEN_WINDOW_HEIGHT -1, GEN_WINDOW_WIDE - 1 };
+  Tetris_figure figures[NUMBER_OF_FIGURES] = { FIGURES_DOTS };		/* Define figures 		*/
+  Remains_xy rem_sizes = { GEN_WINDOW_HEIGHT -1, GEN_WINDOW_WIDE - 1 };	/* The array of remains. 	*/
   char remains[rem_sizes.lines][rem_sizes.cols];
+  size_t speed[GEARS] = { SPEED_VALUES };				/* Define speeds. 		*/
 
-  /* Clean and fill the array. */
-  fill_array(remains, &rem_sizes, SYMBOL_TO_FILL);
+  fill_array(remains, &rem_sizes, SYMBOL_TO_FILL);			/* Clean and fill the array. 	*/
 
-  /* Define figures: area, width, height, dots{..} to print, ## figure_number, max_figure_of_this type (start from zero). */
-  Tetris_figure figures[NUMBER_OF_FIGURES] = { FIGURES_DOTS };
+  Tetris_data *win_data = malloc(sizeof(Tetris_data));
 
-  /* Data. */
-  Tetris_data window_data = { 
-      { NULL, GEN_WINDOW_HEIGHT, GEN_WINDOW_WIDE }, 		/* General window. 	*/
-      { NULL, GEN_WINDOW_HEIGHT, INFO_WINDOW_WIDTH },		/* Info window. 	*/
-      .timeout = MIN_SPEED,					/* Timeout.			*/
-      .cur_line = 4,	/* Start line. */			/* Line inside the cicle. 	*/
-      .column = GEN_WINDOW_WIDE/2,				/* Initial figure position. 	*/
-      .cur_speed = 0,						/* Initial speed (gear). */
-      .figure_p = figures,
-      .speed = { SPEED_VALUES },
-      .remains_p = remains,
-      .rem_sizes = &rem_sizes,
-      .timer_exit = FALSE,
-      .tetris_exit = FALSE,
-  };
+  win_data-> info_win.winp 	= win_data-> gen_win.winp = NULL;		/* Set both window pointers to zero. 	*/
+  win_data-> info_win.ht 	= win_data-> gen_win.ht = GEN_WINDOW_HEIGHT;	/* Windows have the same height.	*/
+  win_data-> gen_win.wt 	= GEN_WINDOW_WIDE;				/* General window width. 		*/
+  win_data-> info_win.wt 	= INFO_WINDOW_WIDTH;				/* Info window width.			*/
+  win_data-> timeout 		= MIN_SPEED;					/* Initial timeout.			*/
+  win_data-> cur_line 		= 4;						/* Initial line.			*/
+  win_data-> column 		= GEN_WINDOW_WIDE/2;				/* Initial figure position.		*/
+  win_data-> cur_speed 		= 0;						/* Initial speed (gear).		*/
+  win_data-> figure_p 		= figures;
+  win_data-> speed 		= speed;
+  win_data-> remains_p 		= remains;
+  win_data-> rem_sizes 		= &rem_sizes;
+  win_data-> tetris_exit 	= FALSE;
+  win_data-> cur_figure 	= figure_num_gen();				/* Figure should be generated before write_info() */
+  win_data-> figure_color 	= color_gen();					/* Generate color for first figure. */
 
-  /* Create windows. */
-  window_data.gen_win.winp = create_win(window_data.gen_win.ht, window_data.gen_win.wt, 0, 0);
-  window_data.info_win.winp = create_win(window_data.info_win.ht, window_data.info_win.wt, 0, GEN_WINDOW_WIDE);
+  win_data-> gen_win.winp = create_win(win_data-> gen_win.ht, win_data-> gen_win.wt, 0, 0);
+  win_data-> info_win.winp = create_win(win_data-> info_win.ht, win_data-> info_win.wt, 0, GEN_WINDOW_WIDE);
 
-  window_data.cur_figure = figure_num_gen();	/* Figure should be generated before write_info() */
-  window_data.figure_color = color_gen();	/* Generate color for first figure. */
+  write_info(win_data);			/* Write info first time. */
 
-  write_info(&window_data);			/* Write info first time. */
+  pthread_t key_thread;
+  if(pthread_create(&key_thread, NULL, key_handle_flow, (void*)win_data)) { perror("Can't create key thread"); }
+  
+  for(;;) {
+      if(win_data-> tetris_exit) { break; }	/* Stop loop. */
 
-  pthread_t tetris_thread;
-  pthread_t timer_thread;
-
-  if(pthread_create(&tetris_thread, NULL, tetris_flow, (void*)&window_data)) {
-      return 1;	/* pthread_create() returns 0 if success. */
+      write_screen(win_data);			/* Update screen. */
+      usleep(win_data-> timeout);
+      increase_line(win_data);
+      if(check_side(win_data, DOWN,0)) {
+          next_step(win_data);
+      }
   }
 
-  if(pthread_create(&timer_thread, NULL, timer_flow, (void*)&window_data)) {
-      return 1;
-  }
-
-  pthread_join(tetris_thread, NULL);	/* Waiting for all threads.	*/
-  pthread_join(timer_thread, NULL);
-
-  tetris_exit(&window_data);
+  pthread_join(key_thread, NULL);	/* Waiting for the thread to quit competelly. */
+  
+  tetris_exit(win_data);
 
   return 0;
 }
