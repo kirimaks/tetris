@@ -10,21 +10,21 @@
 #include<string.h>
 
 #define INFO_WINDOW_WIDTH 	11
-#define GEARS 			15
-#define MAX_SPEED 		20000U
-#define MIN_SPEED 		1000000U
-#define SYMBOL			'#'		/* The symbol to make figure from. 	*/
-#define MAX_AREA		9
+#define GEARS 			    15
+#define MAX_SPEED 		    20000U
+#define MIN_SPEED 		    1000000U
+#define SYMBOL			    '#'		/* The symbol to make figure from. 	*/
+#define MAX_AREA		    9
 #define NUMBER_OF_FIGURES	17	
 #define SYMBOL_TO_FILL		'.'		/* The symbol to make empty area.	*/
 #define SPEED_VALUES  		MIN_SPEED,700000,600000,400000,300000,200000,100000,90000,80000,70000,60000,50000,40000,30000,MAX_SPEED
-#define KEY_SPACE		' '
-#define BURN_TIME		50000
-#define BURN_SYMBOL		'*'
-#define LEVEL_SCORE		40		/* How many scope need go get in a level.	*/
+#define KEY_SPACE		    ' '
+#define BURN_TIME		    50000
+#define BURN_SYMBOL		    '*'
+#define LEVEL_SCORE		    40		/* How many scope need go get in a level.	*/
 #define ONE_BURN_SCOPE		5		/* How many scope gives one burn.		*/
 #define NUMBER_OF_COLORS	7
-#define START_ALIGN		10		/* The speed, figures start to fall the same place where it was before. */
+#define START_ALIGN		    10		/* The speed, figures start to fall the same place where it was before. */
 
 /* General window size. */
 #define GEN_WINDOW_WIDE  	26
@@ -112,16 +112,16 @@ typedef struct {
 } Tetris_figure;
 
 typedef struct {
-  Tetris_window gen_win; 	/* Windows. 			*/
+  Tetris_window gen_win; 	/* Windows. 			        */
   Tetris_window info_win;
-  size_t timeout;		/* (Speed).			*/
+  size_t timeout;		    /* (Speed).			            */
   uint16_t cur_line;		/* Current line inside loop.	*/
-  uint16_t column;		/* Current colum inside loop.	*/
+  uint16_t column;		    /* Current colum inside loop.	*/
   size_t *speed;
-  uint8_t cur_speed;		/* Speed index. 		*/
-  Tetris_figure *figure_p;	/* Pointer to figures.		*/
-  uint8_t cur_figure;		/* Figure index. 		*/
-  void *remains_p;		/* Pointer to remains.			*/
+  uint8_t cur_speed;		/* Speed index. 		        */
+  Tetris_figure *figure_p;	/* Pointer to figures.		    */
+  uint8_t cur_figure;		/* Figure index. 		        */
+  void *remains_p;		    /* Pointer to remains.			*/
   Remains_xy *rem_sizes;	/* Pointer to size of remains array. 	*/
   bool tetris_exit;
   uint8_t figure_color;		/* Figure color number.			*/

@@ -457,25 +457,25 @@ int main(void)
 
   COLOR_PAIRS;		/* Colors definition. */
 
-  Tetris_figure figures[NUMBER_OF_FIGURES] = { FIGURES_DOTS };		/* Define figures 		*/
+  Tetris_figure figures[NUMBER_OF_FIGURES] = { FIGURES_DOTS };		    /* Define figures 		*/
   Remains_xy rem_sizes = { GEN_WINDOW_HEIGHT -1, GEN_WINDOW_WIDE - 1 };	/* The array of remains. 	*/
   char remains[rem_sizes.lines][rem_sizes.cols];
-  size_t speed[GEARS] = { SPEED_VALUES };				/* Define speeds. 		*/
+  size_t speed[GEARS] = { SPEED_VALUES };				                /* Define speeds. 		*/
 
-  fill_array(remains, &rem_sizes, SYMBOL_TO_FILL);			/* Clean and fill the array. 	*/
+  fill_array(remains, &rem_sizes, SYMBOL_TO_FILL);			            /* Clean and fill the array. 	*/
 
   Tetris_data *win_data = malloc(sizeof(Tetris_data));
 
-  win_data-> info_win.winp 	= win_data-> gen_win.winp = NULL;		/* Set both window pointers to zero. 	*/
-  win_data-> info_win.ht 	= win_data-> gen_win.ht = GEN_WINDOW_HEIGHT;	/* Windows have the same height.	*/
-  win_data-> gen_win.wt 	= GEN_WINDOW_WIDE;				/* General window width. 		*/
-  win_data-> info_win.wt 	= INFO_WINDOW_WIDTH;				/* Info window width.			*/
-  win_data-> timeout 		= MIN_SPEED;					/* Initial timeout.			*/
-  win_data-> cur_line 		= 4;						/* Initial line.			*/
-  win_data-> column 		= GEN_WINDOW_WIDE/2;				/* Initial figure position.		*/
-  win_data-> cur_speed 		= 0;						/* Initial speed (gear).		*/
+  win_data-> info_win.winp 	= win_data-> gen_win.winp = NULL;		        /* Set both window pointers to zero.    */
+  win_data-> info_win.ht 	= win_data-> gen_win.ht = GEN_WINDOW_HEIGHT;	/* Windows have the same height.	    */
+  win_data-> gen_win.wt 	= GEN_WINDOW_WIDE;				                /* General window width. 		        */
+  win_data-> info_win.wt 	= INFO_WINDOW_WIDTH;				            /* Info window width.			        */
+  win_data-> timeout 		= MIN_SPEED;					                /* Initial timeout.			            */
+  win_data-> cur_line 		= 4;						                    /* Initial line.			            */
+  win_data-> column 		= GEN_WINDOW_WIDE/2;				            /* Initial figure position.		        */
+  win_data-> cur_speed 		= 0;						                    /* Initial speed (gear).		        */
   win_data-> figure_p 		= figures;
-  win_data-> speed 		= speed;
+  win_data-> speed 		    = speed;
   win_data-> remains_p 		= remains;
   win_data-> rem_sizes 		= &rem_sizes;
   win_data-> tetris_exit 	= FALSE;
