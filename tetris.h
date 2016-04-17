@@ -16,7 +16,7 @@
 #define SYMBOL			    '#'		/* The symbol to make figure from. 	*/
 #define MAX_AREA		    9
 #define NUMBER_OF_FIGURES	17	
-#define SYMBOL_TO_FILL		'.'		/* The symbol to make empty area.	*/
+#define SYMBOL_TO_FILL		'.'		/* The symbol to make empty area (background).	*/
 #define SPEED_VALUES  		MIN_SPEED,700000,600000,400000,300000,200000,100000,90000,80000,70000,60000,50000,40000,30000,MAX_SPEED
 #define KEY_SPACE		    ' '
 #define BURN_TIME		    50000
@@ -32,12 +32,12 @@
 
 /* Color pairs. */
 #define COLOR_PAIRS	init_pair(1, COLOR_RED, 	COLOR_BLACK);	\
-  			init_pair(2, COLOR_GREEN, 	COLOR_BLACK);	\
-  			init_pair(3, COLOR_YELLOW, 	COLOR_BLACK);	\
-  			init_pair(4, COLOR_BLUE, 	COLOR_BLACK);	\
+  			init_pair(2, COLOR_GREEN, 	    COLOR_BLACK);	\
+  			init_pair(3, COLOR_YELLOW, 	    COLOR_BLACK);	\
+  			init_pair(4, COLOR_BLUE, 	    COLOR_BLACK);	\
   			init_pair(5, COLOR_MAGENTA, 	COLOR_BLACK);	\
-  			init_pair(6, COLOR_CYAN, 	COLOR_BLACK);	\
-  			init_pair(7, COLOR_WHITE, 	COLOR_BLACK)
+  			init_pair(6, COLOR_CYAN, 	    COLOR_BLACK);	\
+  			init_pair(7, COLOR_WHITE, 	    COLOR_BLACK)
 
 /* Figure dots. */
 /* Define figures: area, width, height, dots{..} to print, ## figure_number, max_figure_of_this type (start from zero). */
