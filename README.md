@@ -1,6 +1,6 @@
 <H1>TETRIS</H1>
 
-<strong>A fun tetris game, written in C.</strong>
+<strong>Tetris game, written in C.</strong>
 
 <img src="https://raw.githubusercontent.com/kirimaks/tetris/master/pics/pic1.png" border="0" alt="tetris">
 &nbsp;
